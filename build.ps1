@@ -12,5 +12,5 @@ $commonFlags = @(
 $debugFlags = @( 
     '-o:none'
 )
-        
+
 odin build "src/" @commonFlags @debugFlags -out:"build/tt.exe" -build-mode:exe -debug 
