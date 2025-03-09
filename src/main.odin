@@ -1,7 +1,10 @@
 package sp64_tt
 
 import "core:log"
+import "core:mem"
 import "core:os"
+
+// import rl "vendor:raylib"
 
 /*
 TODO:
@@ -9,6 +12,15 @@ TODO:
     Bambo 06/03/25
     
 */
+
+EntryMapKey :: [2]u16
+
+Image_File_Info :: struct {
+    separator_start: int,
+    offset:          int,
+    width:           u16,
+    height:          u16,
+}
 
 main :: proc() {
     options: log.Options = log.Default_File_Logger_Opts
@@ -73,6 +85,29 @@ unpack_textures :: proc(path: string) -> bool {
     }
 
     log.infof("Identified %v separators in packed texture file", len(separator_locations))
+
+    entries_per_size: map[EntryMapKey][dynamic]Image_File_Info
+
+    defer {
+        for _, &e in entries_per_size do delete(e)
+
+        delete(entries_per_size)
+    }
+
+    for &sep, index in separator_locations {
+        if index > len(separator_locations) - 2 do break
+
+        width, height: u16
+
+        mem.copy(&width, &file_contents[sep + 0x2C], size_of(u16))
+        mem.copy(&height, &file_contents[sep + 0x2C + size_of(u16)], size_of(u16))
+
+        if entries_per_size[{width, height}] == nil {
+            entries_per_size[{width, height}] = make([dynamic]Image_File_Info)
+        }
+
+        append(&entries_per_size[{width, height}], Image_File_Info{separator_start = sep, offset = sep, width = width, height = height})
+    }
 
     return true
 }
